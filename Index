@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Informasi Manajemen LAZISNU PRNU Canggu</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'nu-green': '#006633',
+                        'nu-green-dark': '#004d26',
+                        'nu-gold': '#D4AF37',
+                        'nu-gold-light': '#F3E5AB'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* Hide elements during printing */
+        @media print {
+            body { background-color: white; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            
+            /* Print settings for A4 */
+            @page {
+                size: A4 portrait;
+                margin: 20mm;
+            }
+            
+            #print-area {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+
+        .print-only { display: none; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #006633; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #004d26; }
+
+        /* Slider Animations */
+        .fade {
+            animation-name: fade;
+            animation-duration: 1.5s;
+        }
+        @keyframes fade {
+            from {opacity: .4} 
+            to {opacity: 1}
+        }
+
+        /* Toast Animation */
+        .toast-enter { transform: translateY(100%); opacity: 0; }
+        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 300ms ease-in-out; }
+        .toast-exit { transform: translateY(0); opacity: 1; }
+        .toast-exit-active { transform: translateY(100%); opacity: 0; transition: all 300ms ease-in-out; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased flex flex-col min-h-screen">
+
+    <!-- Custom Message Box (Replaces Alert) -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 no-print"></div>
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20">
+                <div class="flex items-center cursor-pointer" onclick="app.switchView('home')">
+                    <img id="nav-logo" src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_NU_%28Nahdlatul_Ulama%29.svg" alt="Logo LAZISNU" class="app-logo h-12 w-auto object-contain mr-3">
+                    <div>
+                        <h1 class="text-xl font-bold text-nu-green leading-tight">LAZISNU PRNU</h1>
+                        <p class="text-xs text-gray-500 font-medium">Canggu, Jetis, Mojokerto</p>
+                    </div>
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <button onclick="app.switchView('home')" class="text-gray-600 hover:text-nu-green font-medium transition">Beranda</button>
+                    <button onclick="app.scrollTo('gallery')" class="text-gray-600 hover:text-nu-green font-medium transition">Galeri</button>
+                    <button onclick="app.switchView('donate')" class="bg-nu-green text-white px-6 py-2 rounded-full font-semibold hover:bg-nu-green-dark transition shadow-lg shadow-nu-green/30">
+                        <i class="fas fa-hand-holding-heart mr-2"></i> Donasi Sekarang
+                    </button>
+                    <button onclick="app.switchView('admin-login')" class="text-gray-400 hover:text-nu-gold transition" title="Login Admin">
+                        <i class="fas fa-user-shield"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-nu-green focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <button onclick="app.switchView('home')" class="block w-full text-left px-3 py-2 text-gray-700 hover:text-nu-green hover:bg-green-50 rounded-md">Beranda</button>
+                <button onclick="app.switchView('donate')" class="block w-full text-left px-3 py-2 text-nu-green font-bold hover:bg-green-50 rounded-md">Donasi</button>
+                <button onclick="app.switchView('admin-login')" class="block w-full text-left px-3 py-2 text-gray-500 hover:text-nu-gold rounded-md">Admin Dashboard</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full">
+        
+        <!-- ==================== VIEW: HOME ==================== -->
+        <div id="view-home" class="view-section">
+            
+            <!-- Banner Slider -->
+            <div class="relative w-full h-[300px] sm:h-[400px] md:h-[500px] bg-gray-900 overflow-hidden group">
+                <div id="slider-container" class="w-full h-full relative">
+                    <!-- Slides injected by JS -->
+                </div>
+                <!-- Slider Controls -->
+                <button onclick="app.nextSlide(-1)" class="absolute top-1/2 left-4 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white rounded-full w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button onclick="app.nextSlide(1)" class="absolute top-1/2 right-4 -translate-y-1/2 bg-white/30 hover:bg-white/50 text-white rounded-full w-10 h-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Program Features -->
+            <div class="max-w-7xl mx-auto px-4 py-16">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-gray-800">Program Penyaluran</h2>
+                    <div class="w-24 h-1 bg-nu-gold mx-auto mt-4 rounded"></div>
+                </div>
+                <div id="programs-grid" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Programs injected by JS -->
+                </div>
+            </div>
+
+            <!-- Gallery Section -->
+            <div id="gallery" class="bg-white py-16">
+                <div class="max-w-7xl mx-auto px-4">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-gray-800">Galeri Kegiatan</h2>
+                        <div class="w-24 h-1 bg-nu-green mx-auto mt-4 rounded"></div>
+                    </div>
+                    <div id="gallery-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Gallery items injected by JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Call to Action -->
+            <div class="bg-nu-green py-16 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+                <div class="max-w-4xl mx-auto px-4 text-center relative z-10">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Mari Berinvestasi untuk Akhirat</h2>
+                    <p class="text-green-100 text-lg mb-8">Salurkan Zakat, Infaq, dan Shodaqoh Anda melalui LAZISNU PRNU Canggu. Transparan, Amanah, dan Tepat Sasaran.</p>
+                    <button onclick="app.switchView('donate')" class="bg-nu-gold hover:bg-yellow-500 text-gray-900 px-8 py-4 rounded-full font-bold text-lg transition shadow-xl transform hover:-translate-y-1">
+                        Formulir Donasi Online <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW: DONATION FORM ==================== -->
+        <div id="view-donate" class="view-section hidden max-w-3xl mx-auto px-4 py-12">
+            <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+                <div class="bg-nu-green p-6 text-center text-white relative">
+                    <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'3\' cy=\'3\' r=\'3\'/%3E%3Ccircle cx=\'13\' cy=\'13\' r=\'3\'/%3E%3C/g%3E%3C/svg%3E');"></div>
+                    <h2 class="text-2xl font-bold relative z-10">Formulir Donasi Online</h2>
+                    <p class="text-green-100 mt-2 relative z-10">Isi data di bawah ini untuk memulai donasi</p>
+                </div>
+                
+                <form id="donation-form" class="p-6 md:p-8 space-y-6" onsubmit="app.submitDonation(event)">
+                    <!-- Data Diri -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2"><i class="fas fa-user text-nu-green mr-2"></i>Data Donatur</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap (Hamba Allah jika kosong)</label>
+                            <input type="text" id="don-name" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-nu-green focus:border-nu-green outline-none transition" placeholder="Contoh: Budi Santoso">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. WhatsApp</label>
+                            <input type="tel" id="don-phone" required class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-nu-green focus:border-nu-green outline-none transition" placeholder="08123456789">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap</label>
+                            <textarea id="don-address" rows="2" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-nu-green focus:border-nu-green outline-none transition" placeholder="RT/RW, Dusun, Desa"></textarea>
+                        </div>
+                    </div>
+                  <div class="mb-4">
+                    <label for="donasi-tanggal" class="block text-sm font-medium text-gray-700">Tanggal Donasi<label>
+                    <input type="date" id="donasi-tanggal" name="tanggal" 
+                           class="w-full mt-1 p-2 border rounded-lg focus:ring-2 focus:ring-green-500"  
+                           required>
+                    </div>
+                    <!-- Kategori & Nominal -->
+                    <div class="space-y-4 pt-4">
+                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2"><i class="fas fa-hand-holding-dollar text-nu-green mr-2"></i>Rincian Donasi</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kategori Donasi</label>
+                            <select id="don-category" required onchange="app.handleCategoryChange()" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-nu-green focus:border-nu-green outline-none transition bg-white">
+                                <option value="" disabled selected>Pilih Kategori...</option>
+                                <option value="Zakat Fitrah">Zakat Fitrah</option>
+                                <option value="Zakat Maal">Zakat Maal</option>
+                                <option value="Infaq Umum">Infaq Umum</option>
+                                <option value="Shodaqoh">Shodaqoh</option>
+                                <option value="Infaq Rutin Jamiyah">Infaq Rutin Jamiyah</option>
+                                <option value="Donatur Tetap">Donatur Tetap</option>
+                            </select>
+                        </div>
+
+                        <!-- Data Ahli Kubur (Hidden by default) -->
+                        <div id="ahli-kubur-container" class="hidden bg-green-50 p-4 rounded-xl border border-green-200">
+                            <label class="block text-sm font-medium text-nu-green-dark mb-1">
+                                <i class="fas fa-users-praying mr-1"></i> Data Ahli Kubur (Khusus Infaq Rutin/Donatur Tetap)
+                            </label>
+                            <p class="text-xs text-gray-500 mb-2">Pisahkan dengan koma jika lebih dari satu (Maks. 5 nama disarankan)</p>
+                            <textarea id="don-ahli-kubur" rows="3" class="w-full px-4 py-3 rounded-xl border border-green-300 focus:ring-2 focus:ring-nu-green outline-none transition" placeholder="Contoh: Fulan bin Fulan, Fulanah binti Fulan"></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nominal (Rp)</label>
+                            <input type="number" id="don-amount" required min="1000" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-nu-green focus:border-nu-green outline-none transition" placeholder="Contoh: 50000">
+                        </div>
+                    </div>
+
+                    <!-- Metode Pembayaran -->
+                    <div class="space-y-4 pt-4">
+                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2"><i class="fas fa-wallet text-nu-green mr-2"></i>Metode Pembayaran</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="payment-method" value="Jemput Donasi" class="peer sr-only" required onchange="app.handlePaymentChange()">
+                                <div class="rounded-xl border-2 border-gray-200 p-4 text-center peer-checked:border-nu-green peer-checked:bg-green-50 transition">
+                                    <i class="fas fa-motorcycle text-2xl mb-2 text-gray-600 peer-checked:text-nu-green"></i>
+                                    <div class="font-semibold text-sm">Jemput Donasi</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="payment-method" value="Transfer Bank" class="peer sr-only" onchange="app.handlePaymentChange()">
+                                <div class="rounded-xl border-2 border-gray-200 p-4 text-center peer-checked:border-nu-green peer-checked:bg-green-50 transition">
+                                    <i class="fas fa-building-columns text-2xl mb-2 text-gray-600 peer-checked:text-nu-green"></i>
+                                    <div class="font-semibold text-sm">Transfer Bank</div>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="payment-method" value="QRIS" class="peer sr-only" onchange="app.handlePaymentChange()">
+                                <div class="rounded-xl border-2 border-gray-200 p-4 text-center peer-checked:border-nu-green peer-checked:bg-green-50 transition">
+                                    <i class="fas fa-qrcode text-2xl mb-2 text-gray-600 peer-checked:text-nu-green"></i>
+                                    <div class="font-semibold text-sm">QRIS</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Payment Instructions -->
+                        <div id="payment-instruction" class="hidden bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <div class="pt-6">
+                        <button type="submit" id="btn-submit-donasi" class="w-full bg-nu-green hover:bg-nu-green-dark text-white font-bold py-4 rounded-xl shadow-lg transition flex justify-center items-center">
+                            <span>Konfirmasi & Lanjutkan</span>
+                            <i class="fas fa-paper-plane ml-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW: RECEIPT ==================== -->
+        <div id="view-receipt" class="view-section hidden max-w-2xl mx-auto px-4 py-12">
+            
+            <div class="mb-6 flex justify-between items-center no-print">
+                <button onclick="app.switchView('home')" class="text-gray-500 hover:text-nu-green"><i class="fas fa-arrow-left mr-2"></i>Kembali</button>
+                <div class="space-x-2">
+                    <button onclick="app.downloadReceiptJPG()" class="bg-gray-800 hover:bg-black text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-image mr-1"></i> Unduh JPG
+                    </button>
+                    <button onclick="window.print()" class="bg-nu-gold hover:bg-yellow-500 text-gray-900 px-4 py-2 rounded-lg text-sm font-medium transition">
+                        <i class="fas fa-print mr-1"></i> Cetak PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Receipt Card (Target for html2canvas) -->
+            <div id="receipt-card" class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 print-area-receipt relative">
+                <!-- Watermark -->
+                <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none z-0">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_NU_%28Nahdlatul_Ulama%29.svg" class="w-64 h-64 object-contain">
+                </div>
+
+                <div class="bg-nu-green p-6 text-white text-center relative z-10 flex flex-col items-center">
+                    <img id="receipt-logo" src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_NU_%28Nahdlatul_Ulama%29.svg" alt="Logo" class="app-logo h-16 w-auto object-contain bg-white rounded-full p-2 mb-3">
+                    <h2 class="text-xl font-bold">TANDA TERIMA DONASI</h2>
+                    <p class="text-sm text-green-100">LAZISNU PRNU CANGGU MOJOKERTO</p>
+                </div>
+                
+                <div class="p-8 relative z-10">
+                    <div class="flex justify-between items-center border-b pb-4 mb-4">
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider">Tanggal</p>
+                            <p class="font-semibold text-gray-800" id="rec-date">-</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500 uppercase tracking-wider">ID Transaksi</p>
+                            <p class="font-mono font-semibold text-gray-800" id="rec-id">-</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Nama Donatur</span>
+                            <span class="font-bold text-gray-800 text-right" id="rec-name">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Kategori</span>
+                            <span class="font-semibold text-gray-800 bg-green-100 text-nu-green px-3 py-1 rounded-full text-sm" id="rec-category">-</span>
+                        </div>
+                        <div id="rec-ahli-kubur-row" class="hidden flex-col bg-gray-50 p-3 rounded-lg border border-gray-100">
+                            <span class="text-gray-500 text-xs mb-1">Data Ahli Kubur</span>
+                            <span class="font-medium text-gray-800 italic" id="rec-ahli-kubur">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Metode Penyerahan</span>
+                            <span class="font-medium text-gray-800" id="rec-method">-</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 bg-gray-50 p-4 rounded-xl border border-dashed border-gray-300 flex justify-between items-center">
+                        <span class="text-gray-600 font-medium">Nominal Donasi</span>
+                        <span class="text-2xl font-bold text-nu-green" id="rec-amount">-</span>
+                    </div>
+
+                    <div class="mt-8 text-center">
+                        <p class="text-sm text-gray-500 italic">"Semoga Allah memberikan pahala atas apa yang engkau berikan, dan menjadikannya pembersih bagimu."</p>
+                        <div class="mt-6 flex justify-between px-8">
+                            <div class="text-center">
+                                <p class="text-xs text-gray-500 mb-8">Penerima (Amil)</p>
+                                <p class="font-semibold text-sm border-t border-gray-300 pt-1">Admin LAZISNU</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-gray-500 mb-8">Donatur</p>
+                                <p class="font-semibold text-sm border-t border-gray-300 pt-1" id="rec-sign-name">Hamba Allah</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-100 p-3 text-center text-xs text-gray-400">
+                    Dokumen ini sah dicetak otomatis oleh sistem.
+                </div>
+            </div>
+            
+            <!-- Instructions post-donation -->
+            <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded shadow-sm no-print">
+                <div class="flex">
+                    <div class="flex-shrink-0"><i class="fas fa-info-circle text-blue-500"></i></div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            Jika Anda memilih metode <b>Transfer</b> atau <b>QRIS</b>, mohon segera selesaikan pembayaran sesuai nominal di atas. Simpan struk ini sebagai bukti.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW: ADMIN LOGIN ==================== -->
+        <div id="view-admin-login" class="view-section hidden max-w-md mx-auto px-4 py-20">
+            <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 text-center">
+                <div class="w-16 h-16 bg-green-100 text-nu-green rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h2 class="text-2xl font-bold mb-6">Login Administrator</h2>
+                <form onsubmit="app.loginAdmin(event)" class="space-y-4">
+                    <input type="password" id="admin-pin" placeholder="Masukkan PIN (1234)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-nu-green outline-none text-center tracking-widest text-lg" required>
+                    <button type="submit" class="w-full bg-nu-green hover:bg-nu-green-dark text-white font-bold py-3 rounded-xl transition">
+                        Masuk Dashboard
+                    </button>
+                </form>
+                <p class="text-xs text-gray-400 mt-4">Untuk demo, gunakan PIN: 1234</p>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW: ADMIN DASHBOARD ==================== -->
+        <div id="view-admin-dashboard" class="view-section hidden w-full bg-gray-50 min-h-screen pb-12">
+            <!-- Admin Topbar -->
+            <div class="bg-nu-green-dark text-white p-4 shadow-md no-print">
+                <div class="max-w-7xl mx-auto flex justify-between items-center">
+                    <h2 class="font-bold text-lg"><i class="fas fa-shield-alt mr-2"></i> Panel Admin LAZISNU</h2>
+                    <button onclick="app.logoutAdmin()" class="text-sm bg-red-600 hover:bg-red-700 px-3 py-1 rounded transition">Logout</button>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-1 md:grid-cols-4 gap-6 no-print">
+                <!-- Sidebar -->
+                <div class="md:col-span-1 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-fit">
+                    <div class="p-4 bg-gray-100 border-b font-semibold text-gray-700">Menu Navigasi</div>
+                    <ul class="flex flex-col">
+                        <li><button onclick="app.switchAdminTab('data')" class="admin-tab w-full text-left px-4 py-3 hover:bg-green-50 border-l-4 border-transparent focus:outline-none" data-tab="data"><i class="fas fa-database w-6 text-gray-400"></i> Data Donasi</button></li>
+                        <li><button onclick="app.switchAdminTab('settings')" class="admin-tab w-full text-left px-4 py-3 hover:bg-green-50 border-l-4 border-transparent focus:outline-none" data-tab="settings"><i class="fas fa-cogs w-6 text-gray-400"></i> Pengaturan Web</button></li>
+                        <li><button onclick="app.switchAdminTab('program-mgr')" class="admin-tab w-full text-left px-4 py-3 hover:bg-green-50 border-l-4 border-transparent focus:outline-none" data-tab="program-mgr"><i class="fas fa-list w-6 text-gray-400"></i> Kelola Program</button></li>
+                        <li><button onclick="app.switchAdminTab('banner-mgr')" class="admin-tab w-full text-left px-4 py-3 hover:bg-green-50 border-l-4 border-transparent focus:outline-none" data-tab="banner-mgr"><i class="fas fa-flag w-6 text-gray-400"></i> Kelola Banner</button></li>
+                        <li><button onclick="app.switchAdminTab('gallery-mgr')" class="admin-tab w-full text-left px-4 py-3 hover:bg-green-50 border-l-4 border-transparent focus:outline-none" data-tab="gallery-mgr"><i class="fas fa-images w-6 text-gray-400"></i> Kelola Galeri</button></li>
+                    </ul>
+                </div>
+
+                <!-- Main Admin Content -->
+                <div class="md:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    
+                    <!-- Tab: Data Donasi -->
+                    <div id="admin-tab-data" class="admin-content-section">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-xl font-bold text-gray-800">Laporan Data Donasi</h3>
+                            <button onclick="app.preparePrintReport()" class="bg-nu-gold text-gray-900 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-500 transition">
+                                <i class="fas fa-file-pdf mr-1"></i> Cetak Laporan (PDF)
+                            </button>
+                        </div>
+                        
+                        <!-- Filters -->
+                        <div class="flex gap-4 mb-4 bg-gray-50 p-3 rounded-lg border">
+                            <select id="filter-type" onchange="app.renderAdminTable()" class="px-3 py-1.5 rounded border text-sm">
+                                <option value="all">Semua Waktu</option>
+                                <option value="today">Hari Ini</option>
+                                <option value="month">Bulan Ini</option>
+                            </select>
+                            <select id="filter-category" onchange="app.renderAdminTable()" class="px-3 py-1.5 rounded border text-sm">
+                                <option value="all">Semua Kategori</option>
+                                <option value="Zakat Fitrah">Zakat</option>
+                                <option value="Infaq Umum">Infaq Umum</option>
+                                <option value="Infaq Rutin Jamiyah">Infaq Rutin</option>
+                            </select>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-600">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-3">Tanggal</th>
+                                        <th class="px-4 py-3">Nama Donatur</th>
+                                        <th class="px-4 py-3">Kategori</th>
+                                        <th class="px-4 py-3">Metode</th>
+                                        <th class="px-4 py-3 text-right">Nominal</th>
+                                        <th class="px-4 py-3 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-table-body">
+                                    <!-- Data injected by JS -->
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-bold text-gray-800 bg-green-50">
+                                        <td colspan="4" class="px-4 py-3 text-right">Total:</td>
+                                        <td class="px-4 py-3 text-right text-nu-green" id="admin-table-total">Rp 0</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Settings -->
+                    <div id="admin-tab-settings" class="admin-content-section hidden">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Pengaturan Website</h3>
+                        <form id="settings-form" onsubmit="app.saveSettings(event)" class="space-y-5">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Link Logo Web (Gambar URL)</label>
+                                <input type="url" id="set-logo" class="w-full px-3 py-2 border rounded" placeholder="https://example.com/logo.png">
+                                <p class="text-xs text-gray-500 mt-1">Logo akan diperbarui di Navbar, Struk, dan Footer.</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Link Kop Surat Laporan (Gambar URL)</label>
+                                <input type="url" id="set-kop" class="w-full px-3 py-2 border rounded" placeholder="https://example.com/kop-surat.jpg">
+                                <p class="text-xs text-gray-500 mt-1">Gunakan link eksternal (Google Drive / Imgur). Ukuran memanjang.</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Ketua LAZISNU</label>
+                                    <input type="text" id="set-ketua" class="w-full px-3 py-2 border rounded">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Bendahara LAZISNU</label>
+                                    <input type="text" id="set-bendahara" class="w-full px-3 py-2 border rounded">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Nomor Rekening Bank (Pisahkan dengan koma)</label>
+                                <textarea id="set-banks" rows="2" class="w-full px-3 py-2 border rounded" placeholder="BSI: 123456 a.n Lazisnu, BRI: 98765"></textarea>
+                            </div>
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Simpan Pengaturan</button>
+                        </form>
+                    </div>
+
+                    <!-- Tab: Program Manager -->
+                    <div id="admin-tab-program-mgr" class="admin-content-section hidden">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Kelola Program Penyaluran</h3>
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6">
+                            <h4 class="font-bold text-blue-800 mb-3"><i class="fas fa-plus-circle mr-1"></i> Tambah Program Baru</h4>
+                            <form id="form-add-program" onsubmit="app.addProgram(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="col-span-1">
+                                    <label class="block text-xs font-medium mb-1">Judul Program</label>
+                                    <input type="text" id="new-prog-title" required class="w-full px-3 py-2 border rounded text-sm" placeholder="Contoh: Pendidikan Agama">
+                                </div>
+                                <div class="col-span-1">
+                                    <label class="block text-xs font-medium mb-1">Ikon (FontAwesome Class)</label>
+                                    <input type="text" id="new-prog-icon" required class="w-full px-3 py-2 border rounded text-sm" placeholder="Contoh: fa-book-quran">
+                                </div>
+                                <div class="col-span-1 md:col-span-2 flex gap-2 items-end">
+                                    <div class="flex-grow">
+                                        <label class="block text-xs font-medium mb-1">Deskripsi Singkat</label>
+                                        <input type="text" id="new-prog-desc" required class="w-full px-3 py-2 border rounded text-sm" placeholder="Contoh: Bantuan operasional TPQ...">
+                                    </div>
+                                    <button type="submit" class="bg-nu-green text-white px-4 py-2 rounded text-sm font-medium hover:bg-nu-green-dark h-fit"><i class="fas fa-save mr-1"></i> Simpan</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div id="admin-program-list" class="space-y-3">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Tab: Banner Manager -->
+                    <div id="admin-tab-banner-mgr" class="admin-content-section hidden">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Kelola Banner Homepage</h3>
+                        <form onsubmit="app.addBanner(event)" class="flex gap-2 mb-6">
+                            <input type="url" id="new-banner-url" required placeholder="URL Gambar Banner (Rasio memanjang disarankan)" class="flex-grow px-3 py-2 border rounded text-sm">
+                            <button type="submit" class="bg-nu-green text-white px-4 py-2 rounded font-medium hover:bg-nu-green-dark"><i class="fas fa-plus mr-1"></i> Tambah</button>
+                        </form>
+                        <div id="admin-banner-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Tab: Gallery Manager -->
+                    <div id="admin-tab-gallery-mgr" class="admin-content-section hidden">
+                        <h3 class="text-xl font-bold text-gray-800 mb-6">Kelola Galeri Kegiatan</h3>
+                        <form onsubmit="app.addGalleryImage(event)" class="flex gap-2 mb-6">
+                            <input type="url" id="new-gallery-url" required placeholder="URL Gambar (https://...)" class="flex-grow px-3 py-2 border rounded">
+                            <button type="submit" class="bg-nu-green text-white px-4 py-2 rounded font-medium hover:bg-nu-green-dark"><i class="fas fa-plus mr-1"></i> Tambah</button>
+                        </form>
+                        <div id="admin-gallery-list" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ==================== PRINT ONLY AREA: REPORT ==================== -->
+    <div id="print-area" class="print-only bg-white w-full">
+        <!-- Kop Surat -->
+        <div class="border-b-4 border-double border-nu-green pb-4 mb-6">
+            <img id="print-kop-surat" src="" alt="Kop Surat" class="w-full h-auto object-contain max-h-32" onerror="this.style.display='none'">
+            <div id="print-kop-fallback" class="text-center hidden">
+                <h1 class="text-2xl font-bold uppercase text-nu-green-dark">Pengurus Ranting Nahdlatul Ulama</h1>
+                <h2 class="text-xl font-bold text-nu-green">LEMBAGA AMIL ZAKAT INFAQ DAN SHODAQOH (LAZISNU)</h2>
+                <p class="text-sm">Ranting Canggu, Kec. Jetis, Kab. Mojokerto</p>
+            </div>
+        </div>
+
+        <div class="text-center mb-6">
+            <h3 class="text-lg font-bold underline uppercase">Laporan Penerimaan Dana</h3>
+            <p class="text-sm" id="print-report-period">Periode: Semua Waktu</p>
+        </div>
+
+        <table class="w-full text-sm border-collapse border border-gray-800 mb-8">
+            <thead>
+                <tr class="bg-gray-100">
+                    <th class="border border-gray-800 px-2 py-1">No</th>
+                    <th class="border border-gray-800 px-2 py-1">Tanggal</th>
+                    <th class="border border-gray-800 px-2 py-1">Nama Donatur</th>
+                    <th class="border border-gray-800 px-2 py-1">Kategori</th>
+                    <th class="border border-gray-800 px-2 py-1 text-right">Nominal (Rp)</th>
+                </tr>
+            </thead>
+            <tbody id="print-table-body">
+                <!-- Data injected by JS -->
+            </tbody>
+            <tfoot>
+                <tr class="font-bold">
+                    <td colspan="4" class="border border-gray-800 px-2 py-1 text-right">TOTAL PENERIMAAN</td>
+                    <td class="border border-gray-800 px-2 py-1 text-right" id="print-table-total">-</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div class="flex justify-between px-12 mt-16">
+            <div class="text-center">
+                <p>Mengetahui,</p>
+                <p class="mb-16">Ketua LAZISNU PRNU Canggu</p>
+                <p class="font-bold underline" id="print-sign-ketua">Nama Ketua</p>
+            </div>
+            <div class="text-center">
+                <p>Canggu, <span id="print-date-now"></span></p>
+                <p class="mb-16">Bendahara</p>
+                <p class="font-bold underline" id="print-sign-bendahara">Nama Bendahara</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-300 py-8 no-print mt-auto">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <h4 class="text-white font-bold text-lg mb-4 flex items-center"><img src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_NU_%28Nahdlatul_Ulama%29.svg" class="app-logo w-6 h-6 mr-2 object-contain"> LAZISNU CANGGU</h4>
+                <p class="text-sm leading-relaxed">Lembaga Amil Zakat, Infaq, dan Shodaqoh Nahdlatul Ulama Pengurus Ranting Canggu, Jetis, Mojokerto. Membangun kemandirian umat melalui filantropi Islam.</p>
+            </div>
+            <div>
+                <h4 class="text-white font-bold text-lg mb-4">Layanan Cepat</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#" onclick="app.switchView('home'); return false;" class="hover:text-nu-gold transition">Beranda</a></li>
+                    <li><a href="#" onclick="app.switchView('donate'); return false;" class="hover:text-nu-gold transition">Konfirmasi Donasi</a></li>
+                    <li><a href="#" onclick="app.switchView('admin-login'); return false;" class="hover:text-nu-gold transition">Login Pengurus</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold text-lg mb-4">Kontak & Rekening</h4>
+                <div class="text-sm space-y-2" id="footer-contact-info">
+                    <p><i class="fas fa-map-marker-alt w-5"></i> Sekretariat PRNU Canggu, Jetis</p>
+                    <p><i class="fab fa-whatsapp w-5"></i> 0812-XXXX-XXXX</p>
+                    <div class="mt-3 pt-3 border-t border-gray-700" id="footer-banks">
+                        <!-- Banks injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 mt-8 pt-4 border-t border-gray-800 text-center text-xs text-gray-500">
+            &copy; <span id="current-year"></span> LAZISNU PRNU Canggu Mojokerto. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Formatter for IDR currency
+        const formatIDR = (amount) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+        };
+
+        // Formatter for Date
+        const formatDate = (dateStr) => {
+            const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return new Date(dateStr).toLocaleDateString('id-ID', options);
+        };
+        const formatDateShort = (dateStr) => {
+            return new Date(dateStr).toLocaleDateString('id-ID');
+        };
+
+        // Main App Controller - Ready to deploy architecture
+        // Note: For GAS Deployment, replace localStorage logic with google.script.run calls.
+        const app = {
+            // Simulated Database (LocalStorage)
+            db: {
+                donations: JSON.parse(localStorage.getItem('lazisnu_donations')) || [],
+                settings: JSON.parse(localStorage.getItem('lazisnu_settings')) || {
+                    logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_NU_%28Nahdlatul_Ulama%29.svg',
+                    kopSurat: '', // User can add image URL
+                    ketua: 'H. Abdul Ghofur',
+                    bendahara: 'M. Sholihin',
+                    banks: 'BSI: 7123456789 a.n LAZISNU CANGGU\nBRI: 0123-01-045678-50-1 a.n LAZISNU'
+                },
+                gallery: JSON.parse(localStorage.getItem('lazisnu_gallery')) || [
+                    'https://placehold.co/600x400/006633/FFFFFF?text=Kegiatan+Santunan',
+                    'https://placehold.co/600x400/D4AF37/000000?text=Rapat+Pengurus',
+                    'https://placehold.co/600x400/004d26/FFFFFF?text=Penyaluran+Zakat',
+                    'https://placehold.co/600x400/eeeeee/333333?text=Ambulance+LAZISNU'
+                ],
+                banners: JSON.parse(localStorage.getItem('lazisnu_banners')) || [
+                    'https://placehold.co/1200x500/006633/FFFFFF?text=Selamat+Datang+di+LAZISNU+Canggu',
+                    'https://placehold.co/1200x500/D4AF37/000000?text=Salurkan+Zakat+Anda+Bersama+Kami'
+                ],
+                programs: JSON.parse(localStorage.getItem('lazisnu_programs')) || [
+                    { id: 1, icon: 'fa-book-quran', color: 'text-nu-green', bg: 'bg-green-100', title: 'Pendidikan Agama', desc: 'Bantuan operasional TPQ, Madin, dan beasiswa santri di wilayah Canggu.' },
+                    { id: 2, icon: 'fa-hand-holding-medical', color: 'text-nu-gold', bg: 'bg-yellow-100', title: 'Sosial & Kesehatan', desc: 'Bantuan pengobatan warga tidak mampu dan santunan anak yatim & dhuafa.' },
+                    { id: 3, icon: 'fa-mosque', color: 'text-blue-600', bg: 'bg-blue-100', title: 'Infrastruktur Ibadah', desc: 'Pembangunan dan pemeliharaan fasilitas Masjid dan Musholla setempat.' }
+                ]
+            },
+            
+            currentSlide: 0,
+            slideInterval: null,
+            
+            // UI Initialization
+            init: function() {
+                document.getElementById('current-year').textContent = new Date().getFullYear();
+                
+                // Setup Mobile Menu Toggle
+                document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                    const menu = document.getElementById('mobile-menu');
+                    menu.classList.toggle('hidden');
+                });
+
+                // Render all dynamic elements
+                this.applySettingsToUI();
+                this.renderBanners();
+                this.renderPrograms();
+                this.renderGallery();
+                
+                // Show home by default
+                this.switchView('home');
+                
+                // Start banner auto-slide safely
+                if(this.slideInterval) clearInterval(this.slideInterval);
+                this.slideInterval = setInterval(() => this.nextSlide(1), 5000);
+
+                // Initial render of admin tables if they happen to look
+                this.renderAdminTable();
+            },
+
+            // Navigation
+            switchView: function(viewId) {
+                // Hide all views
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+                // Show target view
+                document.getElementById(`view-${viewId}`).classList.remove('hidden');
+                
+                // Close mobile menu if open
+                document.getElementById('mobile-menu').classList.add('hidden');
+                
+                window.scrollTo(0, 0);
+
+                // Re-render admin tab active contents if entering dashboard
+                if(viewId === 'admin-dashboard') {
+                    this.renderAdminTable();
+                    this.renderAdminPrograms();
+                    this.renderAdminBanners();
+                    this.renderAdminGalleryList();
+                }
+            },
+            
+            scrollTo: function(elementId) {
+                this.switchView('home');
+                setTimeout(() => {
+                    document.getElementById(elementId).scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            },
+
+            // Custom Toast Notification
+            showToast: function(message, type = 'success') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                
+                const bgColor = type === 'success' ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800';
+                const icon = type === 'success' ? 'fa-check-circle text-green-500' : 'fa-exclamation-circle text-red-500';
+
+                toast.className = `flex items-center w-full max-w-xs p-4 space-x-3 bg-white border-l-4 rounded-lg shadow ${bgColor} toast-enter`;
+                toast.innerHTML = `
+                    <i class="fas ${icon} text-xl"></i>
+                    <div class="text-sm font-medium">${message}</div>
+                `;
+                
+                container.appendChild(toast);
+                
+                // Trigger animation
+                setTimeout(() => { toast.classList.remove('toast-enter'); toast.classList.add('toast-enter-active'); }, 10);
+                
+                // Remove after 3s
+                setTimeout(() => {
+                    toast.classList.replace('toast-enter-active', 'toast-exit');
+                    setTimeout(() => toast.classList.add('toast-exit-active'), 10);
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            },
+
+
+            // Banner Logic
+            renderBanners: function() {
+                const container = document.getElementById('slider-container');
+                container.innerHTML = '';
+                
+                if (this.db.banners.length === 0) {
+                    container.innerHTML = `<div class="absolute inset-0 w-full h-full bg-nu-green flex items-center justify-center text-white"><p>Belum ada banner</p></div>`;
+                    return;
+                }
+
+                this.db.banners.forEach((url, index) => {
+                    const div = document.createElement('div');
+                    div.className = `absolute inset-0 w-full h-full transition-opacity duration-1000 ${index === 0 ? 'opacity-100' : 'opacity-0'}`;
+                    div.id = `slide-${index}`;
+                    div.innerHTML = `
+                        <div class="absolute inset-0 bg-black/40 z-10"></div>
+                        <img src="${url}" class="w-full h-full object-cover z-0" alt="Banner" onerror="this.src='https://placehold.co/1200x500/cccccc/ffffff?text=Image+Error'">
+                    `;
+                    container.appendChild(div);
+                });
+                this.currentSlide = 0;
+            },
+            
+            nextSlide: function(direction) {
+                const slides = document.querySelectorAll('#slider-container > div');
+                if(slides.length <= 1) return;
+                
+                slides[this.currentSlide].classList.remove('opacity-100');
+                slides[this.currentSlide].classList.add('opacity-0');
+                
+                this.currentSlide = (this.currentSlide + direction + slides.length) % slides.length;
+                
+                slides[this.currentSlide].classList.remove('opacity-0');
+                slides[this.currentSlide].classList.add('opacity-100');
+            },
+
+            // Programs Logic
+            renderPrograms: function() {
+                const grid = document.getElementById('programs-grid');
+                grid.innerHTML = '';
+                this.db.programs.forEach(p => {
+                    grid.innerHTML += `
+                        <div class="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md transition text-center border border-gray-100">
+                            <div class="w-16 h-16 ${p.bg} ${p.color} rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
+                                <i class="fas ${p.icon}"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">${p.title}</h3>
+                            <p class="text-gray-600 text-sm">${p.desc}</p>
+                        </div>
+                    `;
+                });
+            },
+
+            // Gallery Logic
+            renderGallery: function() {
+                const grid = document.getElementById('gallery-grid');
+                grid.innerHTML = '';
+                this.db.gallery.forEach(url => {
+                    grid.innerHTML += `
+                        <div class="aspect-w-1 aspect-h-1 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition group">
+                            <img src="${url}" alt="Galeri" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" onerror="this.src='https://placehold.co/600x400/cccccc/ffffff?text=Error'">
+                        </div>
+                    `;
+                });
+            },
+
+
+            // Form Logic
+            handleCategoryChange: function() {
+                const category = document.getElementById('don-category').value;
+                const ahliKuburContainer = document.getElementById('ahli-kubur-container');
+                const ahliKuburInput = document.getElementById('don-ahli-kubur');
+                
+                if (category === 'Infaq Rutin Jamiyah' || category === 'Donatur Tetap') {
+                    ahliKuburContainer.classList.remove('hidden');
+                    ahliKuburInput.required = true;
+                } else {
+                    ahliKuburContainer.classList.add('hidden');
+                    ahliKuburInput.required = false;
+                    ahliKuburInput.value = '';
+                }
+            },
+
+            handlePaymentChange: function() {
+                const method = document.querySelector('input[name="payment-method"]:checked').value;
+                const instruction = document.getElementById('payment-instruction');
+                instruction.classList.remove('hidden');
+                
+                if (method === 'Jemput Donasi') {
+                    instruction.innerHTML = '<i class="fas fa-info-circle text-blue-500 mr-2"></i> Petugas Amil kami akan menghubungi Anda untuk mengatur waktu penjemputan donasi ke alamat yang tertera.';
+                } else if (method === 'Transfer Bank') {
+                    const banks = this.db.settings.banks.replace(/\n/g, '<br>');
+                    instruction.innerHTML = `<p class="font-semibold mb-1">Silakan transfer ke salah satu rekening berikut:</p><div class="text-gray-700 bg-white p-2 rounded border border-gray-200 mt-2">${banks}</div>`;
+                } else if (method === 'QRIS') {
+                    instruction.innerHTML = `
+                        <p class="font-semibold mb-2">Scan QRIS berikut menggunakan aplikasi e-Wallet atau M-Banking:</p>
+                        <div class="bg-white p-2 rounded border border-gray-200 inline-block">
+                            <img src="https://placehold.co/200x200/ffffff/000000?text=QRIS+Dummy" alt="QRIS LAZISNU" class="w-32 h-32 object-contain mx-auto">
+                        </div>
+                    `;
+                }
+            },
+
+            submitDonation: function(e) {
+                e.preventDefault();
+                
+                const btn = document.getElementById('btn-submit-donasi');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+                btn.disabled = true;
+
+                // Gather data
+                const nama = document.getElementById('don-name').value || 'Hamba Allah';
+                const phone = document.getElementById('don-phone').value;
+                const address = document.getElementById('don-address').value;
+                const category = document.getElementById('don-category').value;
+                const ahliKubur = document.getElementById('don-ahli-kubur').value;
+                const amount = parseInt(document.getElementById('don-amount').value);
+                const method = document.querySelector('input[name="payment-method"]:checked').value;
+                const txId = 'TRX-' + Date.now().toString().slice(-6);
+                const dateIso = new Date().toISOString();
+
+                const donationData = {
+                    id: txId,
+                    date: dateIso,
+                    name: nama,
+                    phone: phone,
+                    address: address,
+                    category: category,
+                    ahliKubur: ahliKubur,
+                    amount: amount,
+                    method: method
+                };
+
+                // Save to simulated DB
+                this.db.donations.push(donationData);
+                localStorage.setItem('lazisnu_donations', JSON.stringify(this.db.donations));
+
+                // Simulate network delay
+                setTimeout(() => {
+                    this.showToast('Data donasi berhasil dicatat!');
+                    this.generateReceipt(donationData);
+                    document.getElementById('donation-form').reset();
+                    document.getElementById('ahli-kubur-container').classList.add('hidden');
+                    document.getElementById('payment-instruction').classList.add('hidden');
+                    
+                    btn.innerHTML = '<span>Konfirmasi & Lanjutkan</span><i class="fas fa-paper-plane ml-2"></i>';
+                    btn.disabled = false;
+                }, 800);
+            },
+
+            generateReceipt: function(data) {
+                // Populate Receipt View
+                document.getElementById('rec-id').textContent = data.id;
+                document.getElementById('rec-date').textContent = formatDate(data.date);
+                document.getElementById('rec-name').textContent = data.name;
+                document.getElementById('rec-category').textContent = data.category;
+                document.getElementById('rec-method').textContent = data.method;
+                document.getElementById('rec-amount').textContent = formatIDR(data.amount);
+                document.getElementById('rec-sign-name').textContent = data.name;
+                
+                const ahliRow = document.getElementById('rec-ahli-kubur-row');
+                if(data.ahliKubur) {
+                    ahliRow.classList.remove('hidden');
+                    ahliRow.classList.add('flex');
+                    document.getElementById('rec-ahli-kubur').textContent = data.ahliKubur;
+                } else {
+                    ahliRow.classList.add('hidden');
+                    ahliRow.classList.remove('flex');
+                }
+
+                this.switchView('receipt');
+            },
+
+            downloadReceiptJPG: function() {
+                const element = document.getElementById('receipt-card');
+                
+                // visual tweak before capture
+                element.style.borderRadius = '0'; 
+                
+                html2canvas(element, {
+                    scale: 2, // Higher resolution
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                }).then(canvas => {
+                    // Restore visual
+                    element.style.borderRadius = ''; 
+                    
+                    const link = document.createElement('a');
+                    link.download = `Bukti_Donasi_${document.getElementById('rec-id').textContent}.jpg`;
+                    link.href = canvas.toDataURL('image/jpeg', 0.9);
+                    link.click();
+                    this.showToast('Bukti JPG berhasil diunduh.');
+                }).catch(err => {
+                    console.error(err);
+                    this.showToast('Gagal menghasilkan gambar.', 'error');
+                });
+            },
+
+
+            // Admin Auth
+            loginAdmin: function(e) {
+                e.preventDefault();
+                const pin = document.getElementById('admin-pin').value;
+                if(pin === '1234') {
+                    this.showToast('Login Berhasil!');
+                    document.getElementById('admin-pin').value = '';
+                    this.switchView('admin-dashboard');
+                    
+                    // Set active tab visually
+                    document.querySelectorAll('.admin-tab').forEach(t => {
+                        t.classList.remove('bg-green-50', 'border-nu-green', 'text-nu-green-dark');
+                        t.classList.add('border-transparent');
+                    });
+                    const activeTabBtn = document.querySelector('.admin-tab[data-tab="data"]');
+                    activeTabBtn.classList.remove('border-transparent');
+                    activeTabBtn.classList.add('bg-green-50', 'border-nu-green', 'text-nu-green-dark');
+                    
+                } else {
+                    this.showToast('PIN Salah!', 'error');
+                }
+            },
+            logoutAdmin: function() {
+                this.switchView('home');
+                this.showToast('Berhasil logout.');
+            },
+
+            switchAdminTab: function(tabId) {
+                document.querySelectorAll('.admin-content-section').forEach(el => el.classList.add('hidden'));
+                document.getElementById(`admin-tab-${tabId}`).classList.remove('hidden');
+                
+                document.querySelectorAll('.admin-tab').forEach(t => {
+                    t.classList.remove('bg-green-50', 'border-nu-green', 'text-nu-green-dark');
+                    t.classList.add('border-transparent');
+                });
+                
+                const activeTabBtn = document.querySelector(`.admin-tab[data-tab="${tabId}"]`);
+                activeTabBtn.classList.remove('border-transparent');
+                activeTabBtn.classList.add('bg-green-50', 'border-nu-green', 'text-nu-green-dark');
+
+                // Trigger render for specific dynamic tabs
+                if(tabId === 'program-mgr') this.renderAdminPrograms();
+                if(tabId === 'banner-mgr') this.renderAdminBanners();
+                if(tabId === 'gallery-mgr') this.renderAdminGalleryList();
+            },
+
+
+            // Data Table Rendering & Filtering
+            renderAdminTable: function() {
+                const tbody = document.getElementById('admin-table-body');
+                tbody.innerHTML = '';
+                
+                const typeFilter = document.getElementById('filter-type').value;
+                const catFilter = document.getElementById('filter-category').value;
+                
+                const now = new Date();
+                let filteredData = this.db.donations.filter(d => {
+                    const dDate = new Date(d.date);
+                    
+                    // Time filter
+                    let timeMatch = true;
+                    if(typeFilter === 'today') {
+                        timeMatch = dDate.toDateString() === now.toDateString();
+                    } else if (typeFilter === 'month') {
+                        timeMatch = dDate.getMonth() === now.getMonth() && dDate.getFullYear() === now.getFullYear();
+                    }
+                    
+                    // Category filter
+                    let catMatch = true;
+                    if(catFilter !== 'all') {
+                        catMatch = d.category === catFilter;
+                    }
+                    
+                    return timeMatch && catMatch;
+                });
+
+                // Sort newest first
+                filteredData.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+                let total = 0;
+                
+                if(filteredData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-gray-500">Belum ada data ditemukan.</td></tr>';
+                } else {
+                    filteredData.forEach((d, index) => {
+                        total += d.amount;
+                        const tr = document.createElement('tr');
+                        tr.className = 'border-b hover:bg-gray-50';
+                        tr.innerHTML = `
+                            <td class="px-4 py-3">${formatDateShort(d.date)}</td>
+                            <td class="px-4 py-3 font-medium text-gray-900">${d.name}</td>
+                            <td class="px-4 py-3"><span class="bg-gray-100 text-xs px-2 py-1 rounded">${d.category}</span></td>
+                            <td class="px-4 py-3">${d.method}</td>
+                            <td class="px-4 py-3 text-right font-medium">${formatIDR(d.amount)}</td>
+                            <td class="px-4 py-3 text-center">
+                                <button onclick="app.deleteDonation('${d.id}')" class="text-red-500 hover:text-red-700" title="Hapus"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                
+                document.getElementById('admin-table-total').textContent = formatIDR(total);
+            },
+
+            deleteDonation: function(id) {
+                this.db.donations = this.db.donations.filter(d => d.id !== id);
+                localStorage.setItem('lazisnu_donations', JSON.stringify(this.db.donations));
+                this.renderAdminTable();
+                this.showToast('Data berhasil dihapus.');
+            },
+
+            // Settings Management
+            applySettingsToUI: function() {
+                const s = this.db.settings;
+                document.getElementById('set-logo').value = s.logo || '';
+                document.getElementById('set-kop').value = s.kopSurat || '';
+                document.getElementById('set-ketua').value = s.ketua || '';
+                document.getElementById('set-bendahara').value = s.bendahara || '';
+                document.getElementById('set-banks').value = s.banks || '';
+
+                // Apply Logo to UI elements dynamically
+                const logoUrl = s.logo || 'https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_NU_%28Nahdlatul_Ulama%29.svg';
+                document.querySelectorAll('.app-logo').forEach(img => {
+                    img.src = logoUrl;
+                });
+
+                // Footer Banks
+                const footerBanks = document.getElementById('footer-banks');
+                footerBanks.innerHTML = s.banks ? s.banks.replace(/\n/g, '<br>') : 'Belum ada data rekening.';
+            },
+
+            saveSettings: function(e) {
+                e.preventDefault();
+                this.db.settings.logo = document.getElementById('set-logo').value;
+                this.db.settings.kopSurat = document.getElementById('set-kop').value;
+                this.db.settings.ketua = document.getElementById('set-ketua').value;
+                this.db.settings.bendahara = document.getElementById('set-bendahara').value;
+                this.db.settings.banks = document.getElementById('set-banks').value;
+                
+                localStorage.setItem('lazisnu_settings', JSON.stringify(this.db.settings));
+                this.applySettingsToUI();
+                this.showToast('Pengaturan berhasil disimpan!');
+            },
+
+
+            // Program Management
+            renderAdminPrograms: function() {
+                const list = document.getElementById('admin-program-list');
+                list.innerHTML = '';
+                this.db.programs.forEach(p => {
+                    list.innerHTML += `
+                        <div class="bg-gray-50 p-4 rounded-lg border flex justify-between items-center">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 ${p.bg} ${p.color} rounded-full flex items-center justify-center text-xl">
+                                    <i class="fas ${p.icon}"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-800">${p.title}</h4>
+                                    <p class="text-xs text-gray-500">${p.desc}</p>
+                                </div>
+                            </div>
+                            <button onclick="app.deleteProgram(${p.id})" class="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-lg transition" title="Hapus Program"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                });
+            },
+            
+            addProgram: function(e) {
+                e.preventDefault();
+                const icon = document.getElementById('new-prog-icon').value.replace('fas ', ''); // Clean prefix if user adds it
+                const title = document.getElementById('new-prog-title').value;
+                const desc = document.getElementById('new-prog-desc').value;
+                
+                // Randomize color to keep UI colorful automatically
+                const colors = [
+                    { color: 'text-nu-green', bg: 'bg-green-100' },
+                    { color: 'text-nu-gold', bg: 'bg-yellow-100' },
+                    { color: 'text-blue-600', bg: 'bg-blue-100' },
+                    { color: 'text-purple-600', bg: 'bg-purple-100' },
+                    { color: 'text-red-600', bg: 'bg-red-100' }
+                ];
+                const theme = colors[Math.floor(Math.random() * colors.length)];
+
+                const newProg = {
+                    id: Date.now(),
+                    icon: icon,
+                    title: title,
+                    desc: desc,
+                    color: theme.color,
+                    bg: theme.bg
+                };
+
+                this.db.programs.push(newProg);
+                localStorage.setItem('lazisnu_programs', JSON.stringify(this.db.programs));
+                document.getElementById('form-add-program').reset();
+                
+                this.renderAdminPrograms();
+                this.renderPrograms(); // Update public site seamlessly
+                this.showToast('Program berhasil ditambahkan.');
+            },
+
+            deleteProgram: function(id) {
+                this.db.programs = this.db.programs.filter(p => p.id !== id);
+                localStorage.setItem('lazisnu_programs', JSON.stringify(this.db.programs));
+                this.renderAdminPrograms();
+                this.renderPrograms();
+                this.showToast('Program dihapus dari daftar.');
+            },
+
+            // Banner Management
+            renderAdminBanners: function() {
+                const list = document.getElementById('admin-banner-list');
+                list.innerHTML = '';
+                this.db.banners.forEach((url, index) => {
+                    list.innerHTML += `
+                        <div class="relative group h-32 bg-gray-200 rounded overflow-hidden shadow-sm border border-gray-300">
+                            <img src="${url}" class="w-full h-full object-cover">
+                            <button onclick="app.deleteBanner(${index})" class="absolute top-2 right-2 bg-red-600 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                });
+            },
+
+            addBanner: function(e) {
+                e.preventDefault();
+                const input = document.getElementById('new-banner-url');
+                this.db.banners.push(input.value);
+                localStorage.setItem('lazisnu_banners', JSON.stringify(this.db.banners));
+                input.value = '';
+                this.renderAdminBanners();
+                this.renderBanners(); // Update public slider
+                this.showToast('Banner baru ditambahkan.');
+            },
+
+            deleteBanner: function(index) {
+                this.db.banners.splice(index, 1);
+                localStorage.setItem('lazisnu_banners', JSON.stringify(this.db.banners));
+                this.renderAdminBanners();
+                this.renderBanners();
+                this.showToast('Banner dihapus.');
+            },
+
+            // Gallery Management
+            renderAdminGalleryList: function() {
+                const list = document.getElementById('admin-gallery-list');
+                list.innerHTML = '';
+                this.db.gallery.forEach((url, index) => {
+                    list.innerHTML += `
+                        <div class="relative group aspect-w-1 aspect-h-1 bg-gray-200 rounded overflow-hidden">
+                            <img src="${url}" class="w-full h-full object-cover">
+                            <button onclick="app.deleteGalleryImage(${index})" class="absolute top-1 right-1 bg-red-600 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition"><i class="fas fa-times"></i></button>
+                        </div>
+                    `;
+                });
+            },
+            
+            addGalleryImage: function(e) {
+                e.preventDefault();
+                const input = document.getElementById('new-gallery-url');
+                this.db.gallery.push(input.value);
+                localStorage.setItem('lazisnu_gallery', JSON.stringify(this.db.gallery));
+                input.value = '';
+                this.renderAdminGalleryList();
+                this.renderGallery(); // Update public view
+                this.showToast('Gambar ditambahkan ke galeri.');
+            },
+
+            deleteGalleryImage: function(index) {
+                this.db.gallery.splice(index, 1);
+                localStorage.setItem('lazisnu_gallery', JSON.stringify(this.db.gallery));
+                this.renderAdminGalleryList();
+                this.renderGallery();
+                this.showToast('Gambar dihapus dari galeri.');
+            },
+
+
+            // Print Report PDF Logic
+            preparePrintReport: function() {
+                // Populate Print Area
+                const s = this.db.settings;
+                const kopImg = document.getElementById('print-kop-surat');
+                const kopFallback = document.getElementById('print-kop-fallback');
+                
+                if(s.kopSurat && s.kopSurat.trim() !== '') {
+                    kopImg.src = s.kopSurat;
+                    kopImg.style.display = 'block';
+                    kopFallback.classList.add('hidden');
+                } else {
+                    kopImg.style.display = 'none';
+                    kopFallback.classList.remove('hidden');
+                }
+
+                document.getElementById('print-sign-ketua').textContent = s.ketua || '....................';
+                document.getElementById('print-sign-bendahara').textContent = s.bendahara || '....................';
+                
+                const nowStr = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+                document.getElementById('print-date-now').textContent = nowStr;
+
+                // Sync table data with active filter
+                const typeFilter = document.getElementById('filter-type').options[document.getElementById('filter-type').selectedIndex].text;
+                document.getElementById('print-report-period').textContent = 'Periode: ' + typeFilter;
+
+                const printTbody = document.getElementById('print-table-body');
+                
+                // Copy rows, but remove the action column
+                printTbody.innerHTML = '';
+                let printTotal = 0;
+                let counter = 1;
+                
+                // We re-calculate based on current table state to ensure consistency
+                const tableRows = document.querySelectorAll('#admin-table-body tr');
+                
+                if(tableRows.length > 0 && tableRows[0].cells.length > 1) { // check if not empty message
+                    tableRows.forEach(tr => {
+                        const date = tr.cells[0].textContent;
+                        const name = tr.cells[1].textContent;
+                        const cat = tr.cells[2].textContent;
+                        const amountStr = tr.cells[4].textContent;
+                        
+                        const val = parseInt(amountStr.replace(/[^0-9]/g, ''));
+                        if(!isNaN(val)) printTotal += val;
+
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td class="border border-gray-800 px-2 py-1 text-center">${counter++}</td>
+                            <td class="border border-gray-800 px-2 py-1">${date}</td>
+                            <td class="border border-gray-800 px-2 py-1">${name}</td>
+                            <td class="border border-gray-800 px-2 py-1">${cat}</td>
+                            <td class="border border-gray-800 px-2 py-1 text-right">${amountStr}</td>
+                        `;
+                        printTbody.appendChild(newRow);
+                    });
+                } else {
+                     printTbody.innerHTML = '<tr><td colspan="5" class="border border-gray-800 px-2 py-1 text-center">Nihil</td></tr>';
+                }
+
+                document.getElementById('print-table-total').textContent = formatIDR(printTotal);
+
+                // Show only print area by using window.print() 
+                // The CSS @media print handles hiding the rest of the UI
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            }
+        };
+
+        // Initialize App on DOM Load
+        window.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+       // Contoh fungsi untuk mengirim donasi ke Google Sheets
+        function kirimDonasi() {
+          const formData = {
+            nama: document.getElementById('don-name').value,
+            nominal: document.getElementById('don-amount').value,
+            metode: document.querySelector('input[name="payment-method"]:checked')?.value || '-',
+            kategori: document.getElementById('don-category').value,
+            ahliKubur: document.getElementById('don-ahli-kubur').value,
+            tanggal: document.getElementById('tanggalDonasi').value
+          };
+
+          // Validasi sederhana agar tidak mengirim data kosong
+          if (!formData.nama || !formData.nominal) {
+          alert("Mohon isi Nama dan Nominal dengan benar.");
+          return;
+          }
+          // Memanggil backend Code.gs
+          google.script.run
+              .withSuccessHandler(() => {
+                  alert('Donasi berhasil tersimpan!');
+                  document.getElementById('donation-form').reset(); // Reset form setelah sukses
+              })
+              .withFailureHandler((err) => {
+                  alert('Gagal: ' + err.message);
+              })
+            .simpanDonasi(formData);
+
+        }
+    </script>
+</body>
+</html>
